@@ -1,0 +1,75 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+df=pd.read_csv("TSLA.csv")
+df
+
+df.describe()  #shows summary stats
+
+#Trimming the data: only keeping date and adj close & trimming everything.
+df.set_index(pd.DatetimeIndex(df['Date']),inplace=True)  #The date column is converted to DatwtimeIndex.
+df=df[['Adj Close']]
+df
+
+print(df.info())
+
+plt.figure(figsize=(12, 6))  # This sets the figure size for the model in inches
+plt.plot(df.index, df['Adj Close'], label='Adj Close', color='red')  #df.index is the x-axis data ie DatetimeIndex. #df['adj close'] is the y axis data , label is the box at the top telling adj close
+plt.title('Tesla (TSLA) Adj Close Price Over Time')
+plt.xlabel('Date')
+plt.ylabel('Adj Close Price')
+plt.legend()  #this prints the top most adj close
+plt.grid(True)  # gives better visualization
+plt.show()
+
+pip install pandas_ta # Use this command if your system does not have pandas_ta
+
+import pandas_ta as ta
+
+df.ta.ema(close='Adj Close',length=10,append=True)  #.ta.ema is the way is of calling the ema
+df                                                  #close='adj close' this is the data whose ema is to be calculated.
+                                                    #len is the length of ema
+                                                    #this true means adding new column to previous df
+                                                    #the exponential moving average is calculated 
+
+sma_period = 10                                                    # length of sma
+df['SMA'] = df['Adj Close'].rolling(window=sma_period).mean()
+                                                                   #df['sma'] indicates that we want to add a new column named sma
+                                                                   # df['Adj Close'] this means we need to calculate the sma for the closing price 
+                                                                   #rolling(window=sma_period) this creates a rolling view of sma period that changes with the time.
+                                                                   #rolling(window=sma_period).mean() this is the total way of calculating sma. 
+
+df = df.iloc[10:]                                                  # this drops first 10 row.
+                                                                   # we dropped those rows as they were showing nan and shows no effect on model. 
+                                                                   
+
+plt.figure(figsize=(12, 6))                                        # this is the size of the the chart in inches
+plt.plot(df.index, df['Adj Close'], label='Adj Close', color='red')#printing the actual dataset.
+plt.plot(df.index, df['EMA_10'], label='EMA 10', color='yellow')   # plotting the EMA
+plt.plot(df.index, df['SMA'], label='SMA 10', color='green')       # plotting SMA
+plt.title('Tesla (TSLA) Adj Close Price and EMA 10 Over Time')
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+from sklearn.model_selection import train_test_split
+X_train,X_test,y_train,y_test=train_test_split(df[['Adj Close']],df[['EMA_10']],test_size=0.2)
+
+from sklearn.linear_model import LinearRegression
+model=LinearRegression
+
+model.fit(X_train,y_train)
+y_pred=model.predict(X_test)
+
+print(model.predict(X_test.iloc[0].values.reshape(1,1)))           # checking how well our model is predicting
+print(model.predict(X_test.iloc[3].values.reshape(1,1)))           # checking how well our model is predicting 
+
+from sklearn.metrics import mean_absolute_error,mean_squared_error,r2_score            #calculating the error.
+import math
+
+print("Mean Absolute Error:", mean_absolute_error(y_test, y_pred))
+print("Mean Squared Error",mean_squared_error(y_test, y_pred))
+print("R2 Score:", r2_score(y_test, y_pred))
